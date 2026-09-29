@@ -1,0 +1,35 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Convert bundletool jar to dex
+        run: |
+          mkdir -p work app/src/main/assets
+          cd work
+          wget -q https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar -O bt.jar
+          wget -q https://maven.google.com/com/android/tools/r8/8.5.35/r8-8.5.35.jar -O r8.jar
+          ANDROID_JAR=$(ls -d $ANDROID_HOME/platforms/android-* | sort -V | tail -1)/android.jar
+          java -cp r8.jar com.android.tools.r8.D8 --release --min-api 26 --lib $ANDROID_JAR --output dex.zip bt.jar
+          mkdir res && cd res
+          unzip -q ../bt.jar -x '*.class' 'META-INF/MANIFEST.MF' 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.DSA' || true
+          zip -qr ../dex.zip .
+          cd ..
+          cp dex.zip ../app/src/main/assets/bundletool.zip
+          ls -lh ../app/src/main/assets
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+      - run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NHBundleConverter-debug
+          path: app/build/outputs/apk/debug/*.apk
