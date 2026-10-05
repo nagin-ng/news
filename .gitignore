@@ -1,0 +1,23 @@
+# Gradle / build
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local config (SDK path etc.)
+local.properties
+
+# Signing: apni release keystore kabhi commit mat karna
+*.jks
+*.keystore
+keystore.properties
+# Ye sirf standard debug key hai (secret nahi). Isse har build ka signature same rehta hai,
+# isliye naya APK purane ke upar install ho jata hai.
+!app/debug.keystore
