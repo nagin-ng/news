@@ -1,17 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.DeviceDefault.Light.NoActionBar">
-        <item name="android:windowBackground">@color/app_bg</item>
-        <item name="android:colorAccent">#C6613F</item>
-    </style>
-
-    <style name="ThemeLight" parent="android:Theme.DeviceDefault.Light.NoActionBar">
-        <item name="android:windowBackground">@color/bg_light</item>
-        <item name="android:colorAccent">#C6613F</item>
-    </style>
-
-    <style name="ThemeDark" parent="android:Theme.DeviceDefault.NoActionBar">
-        <item name="android:windowBackground">@color/bg_dark</item>
-        <item name="android:colorAccent">#D97757</item>
-    </style>
+    <style name="Theme.ElectricityBillCalculatorPro" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

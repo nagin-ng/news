@@ -1,3 +1,4 @@
+
 pluginManagement {
     repositories {
         google()
@@ -12,5 +13,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "AgyLauncher"
+rootProject.name = "ElectricityBillCalculatorPro"
 include(":app")
