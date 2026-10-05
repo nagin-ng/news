@@ -1,33 +1,75 @@
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("kotlin-parcelize")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Per-app settings: -P flag ya environment se override ho sakti hain.
+fun prop(name: String, default: String): String =
+    (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: default
+
+val appName = prop("APP_NAME", "GitHub Uploader")
+val appId = prop("APP_ID", "com.nh.githubuploader")
+val appVersionName = prop("VERSION_NAME", "1.0.0")
+// GitHub Actions par run number use hota hai, taaki har build ka versionCode badhta rahe.
+val appVersionCode = prop("VERSION_CODE", System.getenv("GITHUB_RUN_NUMBER") ?: "1").toIntOrNull() ?: 1
+
+// Release signing: keystore tabhi use hoga jab environment variables set hon.
+val keystorePath: String? = System.getenv("KEYSTORE_PATH")
+val hasKeystore = keystorePath != null && file(keystorePath).exists()
+
 android {
-    namespace = "com.nh.electricitybillcalculator"
-    compileSdk = 34
+    namespace = "com.nh.githubuploader"
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nh.electricitybillcalculator"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
+        applicationId = appId
+        minSdk = 24
+        targetSdk = 35
+        versionCode = appVersionCode
+        versionName = appVersionName
+
+        val safeName = appName
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace("'", "\\'")
+        resValue("string", "app_name", safeName)
+    }
+
+    signingConfigs {
+        // Fixed debug key: har build same signature => update install ho jata hai.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        if (hasKeystore) {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = if (hasKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -35,47 +77,34 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
+        buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
-    }
+
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
 dependencies {
-    val room_version = "2.6.1"
-    val nav_version = "2.7.5"
-    val lifecycle_version = "2.6.2"
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.activity:activity-compose:1.9.3")
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
-    implementation("androidx.activity:activity-compose:1.8.1")
-    implementation(platform("androidx.compose:compose-bom:2023.10.01"))
+    implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:$nav_version")
-    
-    // Room
-    implementation("androidx.room:room-runtime:$room_version")
-    implementation("androidx.room:room-ktx:$room_version")
-    ksp("androidx.room:room-compiler:$room_version")
-    
-    // Test
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2023.10.01"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+
+    implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
